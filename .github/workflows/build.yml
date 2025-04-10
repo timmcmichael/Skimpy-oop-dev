@@ -1,0 +1,64 @@
+name: Render and Deploy HTML
+
+on:
+  workflow_dispatch: # Allows manual trigger 
+
+jobs:
+  render-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the private repository
+      - name: Checkout Private Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Set up Ruby (needed for asciidoctor-multipage)
+      - name: Set Up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.0 # Adjust to your preferred version
+          bundler-cache: true
+
+      # Install dependencies
+      - name: Install Dependencies
+        run: |
+          gem install asciidoctor-multipage
+
+      # Render eBook to HTML
+      - name: Render HTML
+        run: |
+          mkdir output
+          asciidoctor-multipage -D output index.adoc # Adjust if input file structure differs
+          ls -la output
+
+
+      # github_token: ${{ secrets.PUBLIC_TOKEN }} # GitHub's auto-generated token
+      # personal_token: ${{ secrets.publish-html }}
+      # Push rendered HTML to the public repository using peaceiris Action
+      # - name: Deploy to Public Repo 
+      #   uses: peaceiris/actions-gh-pages@v3
+      #   with:
+      #     deploy_key: ${{ secrets.DEPLOY_KEY }}
+      #     publish_dir: ./output
+      #     external_repository: timmcmichael/skimpy-csharp
+      #     allow_empty_commit: true
+
+      - name: Deploy to Main Branch
+        run: |
+          rm -rf public-repo # Deletes the directory if it exists
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git clone https://github.com/timmcmichael/skimpy-csharp.git public-repo
+          ls -la ./output
+          ls -la public-repo
+          git remote set-url origin https://github.com/timmcmichael/skimpy-csharp.git
+          git remote -v # Debug: Check the remote URLs
+          rsync -av --delete ./output/ public-repo/ # Syncs files; adjusts as needed
+          cd public-repo
+          git add .
+          git commit -m "Deploy rendered HTML"
+          git push origin main --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
