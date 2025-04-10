@@ -87,8 +87,9 @@ p {
   font-family: var(--main-font) ! important
 }
 
-#toc.toc2 a:link {
-  color: var(--linkcolor);
+#toc.toc2 a:link,
+#toc.toc2 a:visited {
+  color: var(----maincolor) !important;
   font-family: var(--main-font) !important
 }
 
